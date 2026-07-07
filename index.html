@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Campo de Frecuencias · MIU</title>
+<meta name="description" content="Tonos sostenidos, binaurales y ambientales para descanso y enfoque. Funciona sin conexión.">
+<meta name="theme-color" content="#0a0a0a">
+
+<link rel="manifest" href="./manifest.json">
+
+<!-- iOS ignora el manifest para íconos y nombre; requiere sus propios tags -->
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Campo MIU">
+
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<style>
+  :root{
+    --bg: #0a0a0a;
+    --bg-raised: #131110;
+    --bg-card: #16130f;
+    --gold: #d4a843;
+    --gold-dim: #8a703a;
+    --gray: #b0b0b0;
+    --gray-dim: #6f6f6f;
+    --line: #262019;
+    --danger: #c9645a;
+    --ok: #6fae82;
+  }
+  /* Tema claro: mismo lenguaje visual (dorado como acento), fondo invertido.
+     No es un tema "genérico claro" — mantiene el dorado como constante de marca. */
+  [data-tema="claro"]{
+    --bg: #faf6ee;
+    --bg-raised: #f1eadb;
+    --bg-card: #ffffff;
+    --gold: #a97a1f;
+    --gold-dim: #c9a862;
+    --gray: #322c22;
+    --gray-dim: #7a7266;
+    --line: #e3d9c2;
+    --danger: #b5453b;
+    --ok: #3f7a56;
+  }
+  *{box-sizing:border-box;}
+  html{ transition: background-color .25s ease; }
+  html,body{
+    margin:0; padding:0;
+    background:var(--bg);
+    color:var(--gray);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body{ padding-bottom: 4rem; }
+
+  /* ---------- Encabezado ---------- */
+  header{
+    padding: 2.2rem 1.25rem 1.4rem;
+    text-align:center;
+    border-bottom: 1px solid var(--line);
+    background:
+      radial-gradient(120% 140% at 50% -10%, rgba(212,168,67,0.10), transparent 60%),
+      var(--bg);
+  }
+  .glyph{
+    font-size: 1.9rem;
+    color: var(--gold);
+    letter-spacing: 0.08em;
+    font-weight: 300;
+  }
+  h1{
+    font-family: Georgia, "Iowan Old Style", serif;
+    font-weight:600;
+    font-size: 1.7rem;
+    color: var(--gold);
+    margin: 0.5rem 0 0.35rem;
+    letter-spacing: 0.01em;
+  }
+  header p.sub{
+    margin:0; font-size:0.86rem; color:var(--gray-dim);
+    letter-spacing:0.02em;
+  }
+
+  /* ---------- Aviso ---------- */
+  .aviso{
+    max-width: 720px;
+    margin: 1.1rem auto 0;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--gold-dim);
+    background: var(--bg-raised);
+    font-size: 0.82rem;
+    line-height:1.5;
+    color: var(--gray-dim);
+    border-radius: 4px;
+  }
+  .aviso strong{ color: var(--gray); }
+
+  /* ---------- Tabs ---------- */
+  nav.tabs{
+    max-width: 720px;
+    margin: 1.4rem auto 0;
+    display:flex;
+    gap: 0.5rem;
+    padding: 0 1rem;
+  }
+  nav.tabs button{
+    flex:1;
+    padding: 0.85rem 0.5rem;
+    background: var(--bg-raised);
+    border: 1px solid var(--line);
+    color: var(--gray-dim);
+    font-size: 0.92rem;
+    letter-spacing:0.03em;
+    border-radius: 6px;
+    cursor:pointer;
+    transition: color .2s, border-color .2s, background .2s;
+  }
+  nav.tabs button.active{
+    color: var(--gold);
+    border-color: var(--gold-dim);
+    background: #1a1509;
+  }
+
+  main{ max-width: 720px; margin: 0 auto; padding: 1.1rem 1rem 0; }
+  section.panel{ display:none; }
+  section.panel.active{ display:block; }
+
+  /* ---------- Controles globales ---------- */
+  .globales{
+    display:flex; align-items:center; gap:0.9rem;
+    padding: 0.9rem 1rem;
+    background: var(--bg-raised);
+    border:1px solid var(--line);
+    border-radius: 8px;
+    margin-bottom: 1.1rem;
+    flex-wrap: wrap;
+  }
+  .globales label{ font-size:0.78rem; color:var(--gray-dim); white-space:nowrap; }
+  .globales input[type=range]{ flex:1; min-width:100px; accent-color: var(--gold); }
+  .globales .valor{ font-size:0.78rem; color:var(--gold); min-width:2.4em; text-align:right; }
+  #detenerTodo{
+    margin-left:auto;
+    background:none; border:1px solid var(--line); color:var(--gray-dim);
+    padding:0.5rem 0.8rem; border-radius:6px; font-size:0.78rem; cursor:pointer;
+  }
+
+  .grupo-titulo{
+    font-size:0.72rem; text-transform:uppercase; letter-spacing:0.12em;
+    color: var(--gold-dim); margin: 1.6rem 0 0.6rem; padding-left:0.1rem;
+  }
+  .grupo-titulo:first-of-type{ margin-top:0.2rem; }
+
+  /* ---------- Tarjeta de frecuencia ---------- */
+  .freq-card{
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 0.9rem 1rem;
+    margin-bottom: 0.7rem;
+  }
+  .freq-top{
+    display:flex; align-items:center; gap:0.7rem;
+  }
+  .freq-info{ flex:1; min-width:0; }
+  .freq-nombre{
+    color: var(--gray);
+    font-size: 0.98rem;
+    font-weight:600;
+    display:flex; align-items:baseline; gap:0.5rem;
+    flex-wrap:wrap;
+  }
+  .freq-hz{ color: var(--gold); font-variant-numeric: tabular-nums; font-size:0.92rem; }
+  .btn-info{
+    border:1px solid var(--line); background:none; color:var(--gray-dim);
+    width:1.6rem; height:1.6rem; border-radius:50%; font-size:0.78rem;
+    cursor:pointer; flex-shrink:0; line-height:1;
+  }
+  .btn-play{
+    flex-shrink:0;
+    min-width: 88px;
+    padding: 0.7rem 0.9rem;
+    border-radius: 8px;
+    border: 1px solid var(--gold-dim);
+    background: transparent;
+    color: var(--gold);
+    font-size: 0.85rem;
+    font-weight:600;
+    cursor:pointer;
+    transition: background .15s, color .15s;
+  }
+  .btn-play.activo{
+    background: var(--gold);
+    color: #1a1305;
+  }
+  .btn-descarga{
+    flex-shrink:0;
+    min-width: 88px;
+    padding: 0.7rem 0.9rem;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--bg-raised);
+    color: var(--gray);
+    font-size: 0.85rem;
+    cursor:pointer;
+  }
+  .btn-descarga:active{ opacity:0.7; }
+
+  .freq-desc{
+    display:none;
+    margin-top:0.7rem;
+    padding-top:0.7rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.84rem;
+    line-height:1.55;
+    color: var(--gray-dim);
+  }
+  .freq-desc.abierta{ display:block; }
+  .freq-desc .efecto{ color:var(--gray); }
+  .freq-desc .cuando{ display:block; margin-top:0.35rem; font-style:italic; }
+
+  .freq-controles-extra{
+    display:none;
+    margin-top:0.7rem;
+    padding-top:0.7rem;
+    border-top:1px solid var(--line);
+    align-items:center;
+    gap:0.5rem;
+    flex-wrap:wrap;
+  }
+  .freq-controles-extra.abierta{ display:flex; }
+  .timer-btn{
+    background:none; border:1px solid var(--line); color:var(--gray-dim);
+    padding:0.4rem 0.65rem; border-radius:6px; font-size:0.76rem; cursor:pointer;
+  }
+  .timer-btn.sel{ color:var(--gold); border-color:var(--gold-dim); }
+  .estado-timer{
+    font-size:0.76rem; color:var(--gray-dim); margin-left:auto;
+    font-variant-numeric: tabular-nums;
+  }
+  .estado-timer.activo{ color: var(--ok); }
+
+  /* ---------- Descargar tab ---------- */
+  .desc-nota{
+    font-size:0.82rem; color:var(--gray-dim); margin: 0 0 1rem; line-height:1.5;
+  }
+  .desc-todo{
+    width:100%;
+    padding: 0.9rem;
+    margin-bottom: 1.2rem;
+    background: #1a1509;
+    border: 1px solid var(--gold-dim);
+    color: var(--gold);
+    border-radius:8px;
+    font-size:0.9rem;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .desc-todo:disabled{ opacity:0.5; cursor:default; }
+  .desc-row{
+    display:flex; align-items:center; gap:0.8rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .desc-row:last-child{ border-bottom:none; }
+  .desc-row .freq-info{ flex:1; }
+  .prog-bar{
+    height:3px; background:var(--line); border-radius:2px; overflow:hidden;
+    margin-top:0.4rem; display:none;
+  }
+  .prog-bar.activa{ display:block; }
+  .prog-fill{ height:100%; width:0%; background:var(--gold); transition: width .1s linear; }
+
+  /* ---------- Toast ---------- */
+  #toast{
+    position: fixed;
+    bottom: 1.4rem; left:50%;
+    transform: translateX(-50%) translateY(120%);
+    background: #1a1509;
+    border: 1px solid var(--gold-dim);
+    color: var(--gold);
+    padding: 0.8rem 1.3rem;
+    border-radius: 8px;
+    font-size: 0.86rem;
+    transition: transform .35s ease;
+    z-index: 50;
+    max-width: 90vw;
+    text-align:center;
+  }
+  #toast.mostrar{ transform: translateX(-50%) translateY(0); }
+
+  /* ---------- Banner de instalación ---------- */
+  #instalarBanner{
+    display:none;
+    max-width: 720px;
+    margin: 1rem auto 0;
+    padding: 0.85rem 1rem;
+    background: var(--bg-raised);
+    border: 1px solid var(--gold-dim);
+    border-radius: 8px;
+    align-items:center;
+    gap: 0.8rem;
+    font-size: 0.85rem;
+  }
+  #instalarBanner.visible{ display:flex; }
+  #instalarBanner span{ flex:1; color:var(--gray); }
+  #instalarBtn{
+    background: var(--gold); color:#1a1305; border:none;
+    padding: 0.55rem 0.9rem; border-radius:6px; font-size:0.82rem; font-weight:600;
+    cursor:pointer; white-space:nowrap;
+  }
+  #instalarCerrar{
+    background:none; border:none; color:var(--gray-dim); cursor:pointer; font-size:1rem;
+    padding: 0.2rem 0.4rem;
+  }
+
+  /* ---------- Botón de tema (esquina del header) ---------- */
+  .toggle-tema{
+    position:absolute; top: 1.1rem; right: 1.1rem;
+    width: 2.2rem; height:2.2rem; border-radius:50%;
+    border:1px solid var(--line); background:var(--bg-raised);
+    color:var(--gold); font-size:1rem; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  header{ position:relative; }
+
+  /* ---------- Ajustes avanzados (pestaña Ajustes) ---------- */
+  .ajuste-fila{
+    display:flex; align-items:center; justify-content:space-between;
+    gap: 1rem;
+    padding: 0.9rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .ajuste-fila:last-child{ border-bottom:none; }
+  .ajuste-label{ font-size:0.88rem; color:var(--gray); }
+  .ajuste-desc{ font-size:0.76rem; color:var(--gray-dim); margin-top:0.15rem; }
+  .ajuste-fila input[type=range]{ width: 140px; accent-color: var(--gold); }
+  .ajuste-fila select{
+    background: var(--bg-raised); color:var(--gray); border:1px solid var(--line);
+    padding:0.45rem 0.6rem; border-radius:6px; font-size:0.82rem;
+  }
+  .switch{
+    position:relative; width: 44px; height:24px; flex-shrink:0;
+  }
+  .switch input{ opacity:0; width:0; height:0; }
+  .switch-track{
+    position:absolute; inset:0; background: var(--line); border-radius:999px; cursor:pointer;
+    transition: background .2s;
+  }
+  .switch-track::before{
+    content:''; position:absolute; width:18px; height:18px; left:3px; top:3px;
+    background: var(--gray); border-radius:50%; transition: transform .2s, background .2s;
+  }
+  .switch input:checked + .switch-track{ background: var(--gold-dim); }
+  .switch input:checked + .switch-track::before{ transform: translateX(20px); background: var(--gold); }
+
+  .btn-exportar, .btn-importar{
+    background: var(--bg-raised); border:1px solid var(--line); color:var(--gray);
+    padding:0.6rem 0.9rem; border-radius:6px; font-size:0.82rem; cursor:pointer;
+  }
+
+  footer{
+    text-align:center;
+    padding: 2.4rem 1rem 1.5rem;
+    color: var(--gold-dim);
+    font-size: 0.78rem;
+    letter-spacing: 0.03em;
+  }
+
+  @media (max-width: 420px){
+    .freq-top{ flex-wrap:wrap; }
+    .btn-play, .btn-descarga{ min-width: 72px; padding:0.65rem 0.6rem; }
+  }
+
+  :focus-visible{ outline: 2px solid var(--gold); outline-offset: 2px; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <button class="toggle-tema" id="toggleTema" aria-label="Cambiar tema claro/oscuro" title="Cambiar tema">◐</button>
+  <div class="glyph">ρ(x) &gt; 0</div>
+  <h1>Campo de Frecuencias</h1>
+  <p class="sub">Tonos sostenidos para acompañar descanso, foco y calma · MIU</p>
+</header>
+
+<div class="aviso">
+  <strong>Nota:</strong> estos tonos son sonido ambiental para relajación y enfoque —
+  una herramienta de bienestar, no un tratamiento médico. Las descripciones reflejan
+  asociaciones culturales y tradicionales (algunas populares desde los años 90 bajo el
+  nombre "frecuencias Solfeggio"), no hallazgos clínicos establecidos. Si tienes dolor
+  persistente, insomnio prolongado, una condición médica o estás en proceso de
+  recuperación, consulta a un profesional de salud.
+</div>
+
+<div id="instalarBanner">
+  <span>Instala Campo MIU en tu dispositivo para acceso offline directo desde tu pantalla de inicio.</span>
+  <button id="instalarBtn">Instalar</button>
+  <button id="instalarCerrar" aria-label="Cerrar">✕</button>
+</div>
+
+<nav class="tabs">
+  <button id="tabVivoBtn" class="active">Reproducir en vivo</button>
+  <button id="tabDescargaBtn">Descargar</button>
+  <button id="tabAjustesBtn">Ajustes</button>
+</nav>
+
+<main>
+
+  <!-- ===================== PESTAÑA: REPRODUCIR EN VIVO ===================== -->
+  <section id="panelVivo" class="panel active">
+
+    <div class="globales">
+      <label for="volumenGlobal">Volumen</label>
+      <input type="range" id="volumenGlobal" min="0" max="100" value="55">
+      <span class="valor" id="volumenValor">55%</span>
+      <button id="detenerTodo">Detener todo</button>
+    </div>
+
+    <div class="grupo-titulo">Tonos puros</div>
+    <div id="listaBase"></div>
+
+    <div class="grupo-titulo">Binaurales (usar auriculares)</div>
+    <div id="listaBinaural"></div>
+
+    <div class="grupo-titulo">Ambientales (fondo, se pueden superponer)</div>
+    <div id="listaAmbiental"></div>
+
+  </section>
+
+  <!-- ===================== PESTAÑA: DESCARGAR ===================== -->
+  <section id="panelDescarga" class="panel">
+    <p class="desc-nota">
+      Cada pista se genera en tu navegador —no se sube ni descarga nada de un
+      servidor— y dura 5 minutos en formato WAV, listo para usar sin conexión.
+    </p>
+    <button class="desc-todo" id="descargarTodoBtn">Descargar paquete completo (.zip)</button>
+    <div id="listaDescargas"></div>
+  </section>
+
+  <!-- ===================== PESTAÑA: AJUSTES ===================== -->
+  <section id="panelAjustes" class="panel">
+
+    <div class="grupo-titulo">Sonido</div>
+
+    <div class="ajuste-fila">
+      <div>
+        <div class="ajuste-label">Atenuación de entrada/salida</div>
+        <div class="ajuste-desc">Evita "clics" al iniciar o detener un tono.</div>
+      </div>
+      <input type="range" id="ajusteFade" min="0" max="3" step="0.1" value="0.6">
+    </div>
+
+    <div class="ajuste-fila">
+      <div>
+        <div class="ajuste-label">Forma de onda (tonos puros)</div>
+        <div class="ajuste-desc">Senoidal es el tono más limpio y el estándar de estas prácticas.</div>
+      </div>
+      <select id="ajusteOnda">
+        <option value="sine">Senoidal</option>
+        <option value="triangle">Triangular (más suave)</option>
+      </select>
+    </div>
+
+    <div class="grupo-titulo">Datos</div>
+
+    <div class="ajuste-fila">
+      <div>
+        <div class="ajuste-label">Exportar configuración</div>
+        <div class="ajuste-desc">Guarda tus ajustes de volumen y temporizadores en un archivo.</div>
+      </div>
+      <button class="btn-exportar" id="exportarBtn">Exportar</button>
+    </div>
+
+    <div class="ajuste-fila">
+      <div>
+        <div class="ajuste-label">Importar configuración</div>
+        <div class="ajuste-desc">Restaura ajustes desde un archivo exportado antes.</div>
+      </div>
+      <button class="btn-importar" id="importarBtn">Elegir archivo</button>
+      <input type="file" id="importarInput" accept="application/json" style="display:none">
+    </div>
+
+    <div class="grupo-titulo">Acerca de</div>
+    <p class="desc-nota">
+      Campo de Frecuencias funciona completamente en tu dispositivo. No se envían datos a
+      ningún servidor, no hay cuentas, no hay rastreo. El código es tuyo: puedes instalarlo,
+      copiarlo o distribuirlo bajo los términos incluidos en la licencia del proyecto.
+    </p>
+    <p class="desc-nota" style="margin-top:-0.6rem;">
+      Versión de la aplicación: <strong style="color:var(--gold)">1.0.0</strong>
+    </p>
+
+  </section>
+
+</main>
+
+<footer>ρ(x) &gt; 0 — El campo repara. MIU.</footer>
+
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  /* =========================================================
+     DATOS DE FRECUENCIAS
+     tipo: 'puro' | 'binaural' | 'ambiental'
+     ========================================================= */
+  const FRECUENCIAS = [
+    // --- Tonos puros ---
+    { id:'f174', tipo:'puro', hz:174, nombre:'Alivio muscular',
+      efecto:'Tono grave sostenido, asociado tradicionalmente a sensación de relajación física.',
+      cuando:'Como acompañamiento de descanso tras tensión muscular o esfuerzo físico — no reemplaza analgesia ni fisioterapia.' },
+    { id:'f285', tipo:'puro', hz:285, nombre:'Restauración tisular',
+      efecto:'Asociado en la tradición de "frecuencias Solfeggio" a sensación de recuperación; sin respaldo clínico establecido.',
+      cuando:'Como fondo de descanso durante convalecencia leve o fatiga — nunca en lugar de indicación médica.' },
+    { id:'f396', tipo:'puro', hz:396, nombre:'Liberación del miedo',
+      efecto:'Tono grave asociado culturalmente a soltar tensión emocional.',
+      cuando:'Momentos de inquietud o dificultad para conciliar el sueño por preocupación.' },
+    { id:'f417', tipo:'puro', hz:417, nombre:'Apertura al cambio',
+      efecto:'Asociado tradicionalmente a salir de sensación de estancamiento.',
+      cuando:'Cuando notas rigidez mental o ganas de encarar algo distinto.' },
+    { id:'f528', tipo:'puro', hz:528, nombre:'Tono de reparación (528 Hz)',
+      efecto:'Popularizado como "frecuencia del ADN"; es una asociación cultural, no un efecto biológico demostrado.',
+      cuando:'Como fondo de calma durante recuperación general — un complemento sonoro, no un tratamiento.' },
+    { id:'f639', tipo:'puro', hz:639, nombre:'Conexión y armonía',
+      efecto:'Asociado a sensación de apertura hacia otras personas.',
+      cuando:'En momentos de aislamiento percibido o conflicto interno.' },
+    { id:'f741', tipo:'puro', hz:741, nombre:'Claridad y orden',
+      efecto:'Asociado tradicionalmente a sensación de "despejar" el ambiente o la mente.',
+      cuando:'Después de días cargados o exceso de estímulos.' },
+    { id:'f852', tipo:'puro', hz:852, nombre:'Orden interno',
+      efecto:'Asociado a sensación de reorganización mental.',
+      cuando:'Confusión o sobrecarga de información.' },
+    { id:'f963', tipo:'puro', hz:963, nombre:'Claridad superior',
+      efecto:'El más agudo de la serie tradicional; asociado a sensación de lucidez.',
+      cuando:'Niebla mental o sensación de desconexión.' },
+
+    // --- Binaurales ---
+    { id:'b1', tipo:'binaural', hz:200, beat:1, nombre:'Delta (1 Hz)',
+      efecto:'Diferencia binaural en rango delta; parte de la investigación exploratoria sobre sonido y estados de sueño, sin resultados concluyentes.',
+      cuando:'Como fondo para dormir. Requiere auriculares para que el efecto binaural ocurra.' },
+    { id:'b2', tipo:'binaural', hz:200, beat:6, nombre:'Theta (6 Hz)',
+      efecto:'Rango asociado en estudios exploratorios a estados de relajación profunda y meditación.',
+      cuando:'Sesiones de meditación o cuando buscas desconectar del ruido mental.' },
+    { id:'b3', tipo:'binaural', hz:200, beat:10, nombre:'Alpha (10 Hz)',
+      efecto:'Rango asociado a relajación alerta, un puente entre vigilia y somnolencia.',
+      cuando:'Lectura ligera, pausas activas, trabajo de baja exigencia.' },
+    { id:'b4', tipo:'binaural', hz:200, beat:40, nombre:'Gamma (40 Hz)',
+      efecto:'Rango de interés en investigación cognitiva exploratoria sobre enfoque; evidencia preliminar y no concluyente.',
+      cuando:'Sesiones cortas de máximo 5 minutos. No se recomienda uso prolongado ni frecuente.',
+      maxMin: 5 },
+
+    // --- Ambientales ---
+    { id:'a1', tipo:'ambiental', hz:7.83, nombre:'Resonancia Schumann',
+      efecto:'Tono grave de fondo, referencia a la resonancia electromagnética natural de la Tierra.',
+      cuando:'Como sonido de fondo constante durante el día.' },
+    { id:'a2', tipo:'ambiental', hz:null, ruido:'blanco', nombre:'Lluvia suave (ruido blanco)',
+      efecto:'Enmascara ruido externo y puede ayudar a sostener la concentración.',
+      cuando:'Entornos ruidosos o cuando cuesta concentrarse.' },
+    { id:'a3', tipo:'ambiental', hz:null, ruido:'rosa', nombre:'Tormenta distante (ruido rosa)',
+      efecto:'Más grave que el ruido blanco; suele asociarse a facilitar el descanso.',
+      cuando:'Dificultad para conciliar el sueño o descanso profundo.' },
+  ];
+
+  const OPCIONES_TIMER = [5,10,15,20,30,0]; // 0 = ilimitado
+
+  /* =========================================================
+     ESTADO DE AUDIO
+     ========================================================= */
+  let ctx = null;
+  function getCtx(){
+    if(!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if(ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+
+  const masterGain = { node:null };
+  function getMasterGain(){
+    if(!masterGain.node){
+      masterGain.node = getCtx().createGain();
+      masterGain.node.gain.value = (parseInt(localStorage.getItem('miu_volumen')||'55',10))/100;
+      masterGain.node.connect(getCtx().destination);
+    }
+    return masterGain.node;
+  }
+
+  // Sesiones activas por id de frecuencia: { osc/nodes, gain, timerId, endsAt, tipo }
+  const activos = {};
+
+  function crearRuido(tipoRuido){
+    const c = getCtx();
+    const bufferSize = 2 * c.sampleRate;
+    const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
+    const data = buffer.getChannelData(0);
+    if(tipoRuido === 'blanco'){
+      for(let i=0;i<bufferSize;i++) data[i] = Math.random()*2-1;
+    } else {
+      // rosa (Paul Kellet filtro simple)
+      let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+      for(let i=0;i<bufferSize;i++){
+        const white = Math.random()*2-1;
+        b0 = 0.99886*b0 + white*0.0555179;
+        b1 = 0.99332*b1 + white*0.0750759;
+        b2 = 0.96900*b2 + white*0.1538520;
+        b3 = 0.86650*b3 + white*0.3104856;
+        b4 = 0.55000*b4 + white*0.5329522;
+        b5 = -0.7616*b5 - white*0.0168980;
+        let out = b0+b1+b2+b3+b4+b5+b6+white*0.5362;
+        b6 = white*0.115926;
+        data[i] = out * 0.11;
+      }
+    }
+    const src = c.createBufferSource();
+    src.buffer = buffer;
+    src.loop = true;
+    return src;
+  }
+
+  function iniciar(freq){
+    const c = getCtx();
+    detener(freq.id, true); // limpia si ya estaba activo (mismo id)
+
+    // Si es tono puro o binaural (no ambiental), detener cualquier otro puro/binaural activo
+    if(freq.tipo !== 'ambiental'){
+      Object.keys(activos).forEach(id=>{
+        if(activos[id].tipo !== 'ambiental') detener(id);
+      });
+    }
+
+    const gainNode = c.createGain();
+    const fadeSeg = parseFloat(localStorage.getItem('miu_fade') || '0.6');
+    gainNode.gain.setValueAtTime(0.0001, c.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(1, c.currentTime + Math.max(0.01, fadeSeg));
+    gainNode.connect(getMasterGain());
+
+    const formaOnda = localStorage.getItem('miu_onda') || 'sine';
+    let nodes = [];
+
+    if(freq.tipo === 'binaural'){
+      const oscL = c.createOscillator();
+      const oscR = c.createOscillator();
+      const panL = c.createStereoPanner(); panL.pan.value = -1;
+      const panR = c.createStereoPanner(); panR.pan.value = 1;
+      oscL.type = formaOnda; oscR.type = formaOnda;
+      oscL.frequency.value = freq.hz;
+      oscR.frequency.value = freq.hz + freq.beat;
+      oscL.connect(panL).connect(gainNode);
+      oscR.connect(panR).connect(gainNode);
+      oscL.start(); oscR.start();
+      nodes = [oscL, oscR];
+    } else if(freq.tipo === 'ambiental' && freq.ruido){
+      const src = crearRuido(freq.ruido);
+      src.connect(gainNode);
+      src.start();
+      nodes = [src];
+    } else {
+      const osc = c.createOscillator();
+      osc.type = formaOnda;
+      osc.frequency.value = freq.hz;
+      osc.connect(gainNode);
+      osc.start();
+      nodes = [osc];
+    }
+
+    activos[freq.id] = { nodes, gainNode, tipo:freq.tipo, timerId:null, endsAt:null };
+    marcarBotonActivo(freq.id, true);
+    return activos[freq.id];
+  }
+
+  function detener(id, silencioso){
+    const s = activos[id];
+    if(!s) return;
+
+    // Actualización de estado/UI es inmediata; el fade-out del audio ocurre en paralelo.
+    if(s.timerId) clearInterval(s.timerId);
+    delete activos[id];
+    marcarBotonActivo(id, false);
+    resetEstadoTimer(id);
+
+    const fadeSeg = silencioso ? 0.03 : parseFloat(localStorage.getItem('miu_fade') || '0.6');
+    try{
+      const c = getCtx();
+      s.gainNode.gain.cancelScheduledValues(c.currentTime);
+      s.gainNode.gain.setValueAtTime(Math.max(s.gainNode.gain.value, 0.0001), c.currentTime);
+      s.gainNode.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + Math.max(0.03, fadeSeg));
+      setTimeout(()=>{
+        try{
+          s.nodes.forEach(n=>{ try{ n.stop(); }catch(e){} });
+          s.gainNode.disconnect();
+        }catch(e){}
+      }, Math.max(30, fadeSeg*1000) + 60);
+    }catch(e){
+      // Contexto ya cerrado u otro fallo: forzar corte inmediato como respaldo.
+      try{
+        s.nodes.forEach(n=>{ try{ n.stop(); }catch(e2){} });
+        s.gainNode.disconnect();
+      }catch(e3){}
+    }
+
+    if(!silencioso) guardarEstado();
+  }
+
+  function detenerTodos(){
+    Object.keys(activos).forEach(id=>detener(id, true));
+    guardarEstado();
+  }
+
+  function marcarBotonActivo(id, activo){
+    const btn = document.querySelector(`.btn-play[data-id="${id}"]`);
+    if(!btn) return;
+    btn.classList.toggle('activo', activo);
+    btn.textContent = activo ? 'Detener' : 'Reproducir';
+  }
+
+  function resetEstadoTimer(id){
+    const el = document.querySelector(`.estado-timer[data-id="${id}"]`);
+    if(el){ el.textContent=''; el.classList.remove('activo'); }
+  }
+
+  /* =========================================================
+     TEMPORIZADOR POR FRECUENCIA
+     ========================================================= */
+  function aplicarTimer(freq, minutos){
+    const s = activos[freq.id];
+    if(!s) return;
+    if(s.timerId) clearInterval(s.timerId);
+    const elEstado = document.querySelector(`.estado-timer[data-id="${freq.id}"]`);
+
+    if(minutos === 0){
+      if(elEstado){ elEstado.textContent = 'Sin límite'; elEstado.classList.remove('activo'); }
+      s.endsAt = null;
+      return;
+    }
+
+    s.endsAt = Date.now() + minutos*60000;
+    if(elEstado) elEstado.classList.add('activo');
+
+    function tick(){
+      const restanteMs = s.endsAt - Date.now();
+      if(restanteMs <= 0){
+        detener(freq.id);
+        mostrarToast('Ciclo completado.');
+        return;
+      }
+      const mm = Math.floor(restanteMs/60000);
+      const ss = Math.floor((restanteMs%60000)/1000);
+      if(elEstado) elEstado.textContent = `${mm}:${ss.toString().padStart(2,'0')} restantes`;
+    }
+    tick();
+    s.timerId = setInterval(tick, 500);
+  }
+
+  /* =========================================================
+     TOAST
+     ========================================================= */
+  let toastTimeout;
+  function mostrarToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('mostrar');
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(()=> t.classList.remove('mostrar'), 3200);
+  }
+
+  /* =========================================================
+     RENDER: TARJETAS "REPRODUCIR EN VIVO"
+     ========================================================= */
+  function etiquetaHz(freq){
+    if(freq.tipo==='binaural') return `${freq.hz} Hz portadora · Δ${freq.beat} Hz`;
+    if(freq.hz==null) return 'Ruido continuo';
+    return `${freq.hz} Hz`;
+  }
+
+  function crearTarjetaVivo(freq){
+    const card = document.createElement('div');
+    card.className = 'freq-card';
+
+    const timerBotones = OPCIONES_TIMER
+      .filter(m => !freq.maxMin || m===0 || m<=freq.maxMin || m===5)
+      .map(m => `<button class="timer-btn" data-min="${m}" data-id="${freq.id}">${m===0?'∞':m+'m'}</button>`)
+      .join('');
+
+    card.innerHTML = `
+      <div class="freq-top">
+        <div class="freq-info">
+          <div class="freq-nombre">${freq.nombre} <span class="freq-hz">${etiquetaHz(freq)}</span></div>
+        </div>
+        <button class="btn-info" data-id="${freq.id}" aria-label="Información">i</button>
+        <button class="btn-play" data-id="${freq.id}">Reproducir</button>
+      </div>
+      <div class="freq-desc" data-id="${freq.id}">
+        <span class="efecto">${freq.efecto}</span>
+        <span class="cuando">${freq.cuando}</span>
+      </div>
+      <div class="freq-controles-extra" data-id="${freq.id}">
+        ${timerBotones}
+        <span class="estado-timer" data-id="${freq.id}"></span>
+      </div>
+    `;
+
+    card.querySelector('.btn-info').addEventListener('click', ()=>{
+      card.querySelector('.freq-desc').classList.toggle('abierta');
+    });
+
+    const btnPlay = card.querySelector('.btn-play');
+    btnPlay.addEventListener('click', ()=>{
+      if(activos[freq.id]){
+        detener(freq.id);
+      } else {
+        iniciar(freq);
+        card.querySelector('.freq-controles-extra').classList.add('abierta');
+        const tSel = estadoGlobal.timers[freq.id];
+        if(tSel !== undefined) aplicarTimer(freq, tSel);
+      }
+      guardarEstado();
+    });
+
+    card.querySelectorAll('.timer-btn').forEach(tb=>{
+      tb.addEventListener('click', ()=>{
+        card.querySelectorAll('.timer-btn').forEach(x=>x.classList.remove('sel'));
+        tb.classList.add('sel');
+        const minutos = parseInt(tb.dataset.min,10);
+        estadoGlobal.timers[freq.id] = minutos;
+        if(activos[freq.id]) aplicarTimer(freq, minutos);
+        guardarEstado();
+      });
+    });
+
+    return card;
+  }
+
+  document.getElementById('listaBase').append(
+    ...FRECUENCIAS.filter(f=>f.tipo==='puro').map(crearTarjetaVivo)
+  );
+  document.getElementById('listaBinaural').append(
+    ...FRECUENCIAS.filter(f=>f.tipo==='binaural').map(crearTarjetaVivo)
+  );
+  document.getElementById('listaAmbiental').append(
+    ...FRECUENCIAS.filter(f=>f.tipo==='ambiental').map(crearTarjetaVivo)
+  );
+
+  /* =========================================================
+     VOLUMEN GLOBAL
+     ========================================================= */
+  const volumenInput = document.getElementById('volumenGlobal');
+  const volumenValor = document.getElementById('volumenValor');
+  volumenInput.addEventListener('input', ()=>{
+    volumenValor.textContent = volumenInput.value + '%';
+    if(masterGain.node) masterGain.node.gain.value = volumenInput.value/100;
+    guardarEstado();
+  });
+
+  document.getElementById('detenerTodo').addEventListener('click', detenerTodos);
+
+  /* =========================================================
+     TABS (genérico, soporta N pestañas)
+     ========================================================= */
+  const TABS = [
+    { btn:'tabVivoBtn', panel:'panelVivo' },
+    { btn:'tabDescargaBtn', panel:'panelDescarga' },
+    { btn:'tabAjustesBtn', panel:'panelAjustes' },
+  ];
+
+  function activarTab(idBoton){
+    TABS.forEach(t=>{
+      const esActiva = t.btn === idBoton;
+      document.getElementById(t.btn).classList.toggle('active', esActiva);
+      document.getElementById(t.panel).classList.toggle('active', esActiva);
+    });
+  }
+
+  TABS.forEach(t=>{
+    document.getElementById(t.btn).addEventListener('click', ()=>activarTab(t.btn));
+  });
+
+  /* =========================================================
+     GENERACIÓN DE WAV (offline, sin servidor)
+     ========================================================= */
+  function generarWav(freq, duracionSeg){
+    const sampleRate = 44100;
+    const totalSamples = sampleRate * duracionSeg;
+    const canales = freq.tipo === 'binaural' ? 2 : 1;
+    const buffer = new ArrayBuffer(44 + totalSamples*canales*2);
+    const view = new DataView(buffer);
+
+    function escribirStr(offset, str){
+      for(let i=0;i<str.length;i++) view.setUint8(offset+i, str.charCodeAt(i));
+    }
+
+    escribirStr(0,'RIFF');
+    view.setUint32(4, 36 + totalSamples*canales*2, true);
+    escribirStr(8,'WAVE');
+    escribirStr(12,'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true); // PCM
+    view.setUint16(22, canales, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate*canales*2, true);
+    view.setUint16(32, canales*2, true);
+    view.setUint16(34, 16, true);
+    escribirStr(36,'data');
+    view.setUint32(40, totalSamples*canales*2, true);
+
+    const fadeSamples = Math.min(sampleRate*2, Math.floor(totalSamples*0.02));
+    let offset = 44;
+
+    function envolvente(i){
+      if(i < fadeSamples) return i/fadeSamples;
+      if(i > totalSamples-fadeSamples) return (totalSamples-i)/fadeSamples;
+      return 1;
+    }
+
+    if(freq.tipo === 'binaural'){
+      for(let i=0;i<totalSamples;i++){
+        const t = i/sampleRate;
+        const env = envolvente(i)*0.6;
+        const l = Math.sin(2*Math.PI*freq.hz*t) * env;
+        const r = Math.sin(2*Math.PI*(freq.hz+freq.beat)*t) * env;
+        view.setInt16(offset, l*32767, true); offset+=2;
+        view.setInt16(offset, r*32767, true); offset+=2;
+      }
+    } else if(freq.tipo==='ambiental' && freq.ruido){
+      let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+      for(let i=0;i<totalSamples;i++){
+        const env = envolvente(i)*0.5;
+        let sample;
+        if(freq.ruido==='blanco'){
+          sample = (Math.random()*2-1);
+        } else {
+          const white = Math.random()*2-1;
+          b0 = 0.99886*b0 + white*0.0555179;
+          b1 = 0.99332*b1 + white*0.0750759;
+          b2 = 0.96900*b2 + white*0.1538520;
+          b3 = 0.86650*b3 + white*0.3104856;
+          b4 = 0.55000*b4 + white*0.5329522;
+          b5 = -0.7616*b5 - white*0.0168980;
+          sample = (b0+b1+b2+b3+b4+b5+b6+white*0.5362)*0.11;
+          b6 = white*0.115926;
+        }
+        view.setInt16(offset, sample*env*32767, true); offset+=2;
+      }
+    } else {
+      for(let i=0;i<totalSamples;i++){
+        const t = i/sampleRate;
+        const env = envolvente(i)*0.6;
+        const sample = Math.sin(2*Math.PI*freq.hz*t)*env;
+        view.setInt16(offset, sample*32767, true); offset+=2;
+      }
+    }
+
+    return new Blob([buffer], {type:'audio/wav'});
+  }
+
+  function nombreArchivo(freq){
+    const base = freq.nombre.normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_+|_+$/g,'').toLowerCase();
+    return `miu_${base}_${freq.hz||'ruido'}hz.wav`;
+  }
+
+  /* =========================================================
+     RENDER: PESTAÑA DESCARGAR
+     ========================================================= */
+  const listaDescargas = document.getElementById('listaDescargas');
+
+  FRECUENCIAS.forEach(freq=>{
+    const row = document.createElement('div');
+    row.className = 'desc-row';
+    row.innerHTML = `
+      <div class="freq-info">
+        <div class="freq-nombre">${freq.nombre} <span class="freq-hz">${etiquetaHz(freq)}</span></div>
+        <div class="prog-bar" data-id="dl_${freq.id}"><div class="prog-fill"></div></div>
+      </div>
+      <button class="btn-descarga" data-id="${freq.id}">Descargar</button>
+    `;
+    const btn = row.querySelector('.btn-descarga');
+    btn.addEventListener('click', async ()=>{
+      btn.disabled = true;
+      btn.textContent = 'Generando…';
+      // deja respirar al hilo de UI antes de calcular
+      await new Promise(r=>setTimeout(r, 30));
+      const blob = generarWav(freq, 300); // 5 minutos
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = nombreArchivo(freq);
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 4000);
+      btn.disabled = false;
+      btn.textContent = 'Descargar';
+    });
+    listaDescargas.appendChild(row);
+  });
+
+  document.getElementById('descargarTodoBtn').addEventListener('click', async ()=>{
+    const btn = document.getElementById('descargarTodoBtn');
+    if(typeof JSZip === 'undefined'){
+      mostrarToast('No se pudo cargar el generador de ZIP (sin conexión).');
+      return;
+    }
+    btn.disabled = true;
+    const zip = new JSZip();
+    for(let i=0;i<FRECUENCIAS.length;i++){
+      const freq = FRECUENCIAS[i];
+      btn.textContent = `Generando ${i+1}/${FRECUENCIAS.length}…`;
+      await new Promise(r=>setTimeout(r, 10));
+      const blob = generarWav(freq, 300);
+      zip.file(nombreArchivo(freq), blob);
+    }
+    btn.textContent = 'Comprimiendo…';
+    const contenido = await zip.generateAsync({type:'blob'});
+    const url = URL.createObjectURL(contenido);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'miu_campo_de_frecuencias.zip';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 4000);
+    btn.disabled = false;
+    btn.textContent = 'Descargar paquete completo (.zip)';
+  });
+
+  /* =========================================================
+     PERSISTENCIA (localStorage)
+     ========================================================= */
+  const estadoGlobal = { timers:{} };
+
+  const ajusteFadeInput = document.getElementById('ajusteFade');
+  const ajusteOndaInput = document.getElementById('ajusteOnda');
+
+  function cargarEstado(){
+    try{
+      const raw = localStorage.getItem('miu_estado');
+      if(raw){
+        const data = JSON.parse(raw);
+        if(data.volumen!==undefined){
+          volumenInput.value = data.volumen;
+          volumenValor.textContent = data.volumen+'%';
+        }
+        if(data.timers) estadoGlobal.timers = data.timers;
+        if(data.fade!==undefined){
+          ajusteFadeInput.value = data.fade;
+          localStorage.setItem('miu_fade', data.fade);
+        }
+        if(data.onda){
+          ajusteOndaInput.value = data.onda;
+          localStorage.setItem('miu_onda', data.onda);
+        }
+      }
+    }catch(e){}
+
+    // Reflejar selección de timers guardada en los botones (sin iniciar audio)
+    Object.keys(estadoGlobal.timers).forEach(id=>{
+      const minutos = estadoGlobal.timers[id];
+      const btn = document.querySelector(`.timer-btn[data-id="${id}"][data-min="${minutos}"]`);
+      if(btn){
+        document.querySelectorAll(`.timer-btn[data-id="${id}"]`).forEach(x=>x.classList.remove('sel'));
+        btn.classList.add('sel');
+      }
+    });
+
+    // Tema: guardado explícito tiene prioridad; si no existe, respeta la preferencia del sistema.
+    const temaGuardado = localStorage.getItem('miu_tema');
+    if(temaGuardado){
+      aplicarTema(temaGuardado);
+    } else if(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches){
+      aplicarTema('claro');
+    }
+  }
+
+  function guardarEstado(){
+    const data = {
+      volumen: parseInt(volumenInput.value,10),
+      timers: estadoGlobal.timers,
+      fade: parseFloat(ajusteFadeInput.value),
+      onda: ajusteOndaInput.value
+    };
+    try{ localStorage.setItem('miu_estado', JSON.stringify(data)); }catch(e){}
+  }
+
+  ajusteFadeInput.addEventListener('input', ()=>{
+    localStorage.setItem('miu_fade', ajusteFadeInput.value);
+    guardarEstado();
+  });
+  ajusteOndaInput.addEventListener('change', ()=>{
+    localStorage.setItem('miu_onda', ajusteOndaInput.value);
+    guardarEstado();
+  });
+
+  /* =========================================================
+     TEMA CLARO/OSCURO
+     ========================================================= */
+  function aplicarTema(tema){
+    if(tema === 'claro'){
+      document.documentElement.setAttribute('data-tema','claro');
+    } else {
+      document.documentElement.removeAttribute('data-tema');
+    }
+    localStorage.setItem('miu_tema', tema);
+  }
+
+  document.getElementById('toggleTema').addEventListener('click', ()=>{
+    const actual = document.documentElement.getAttribute('data-tema') === 'claro' ? 'claro' : 'oscuro';
+    aplicarTema(actual === 'claro' ? 'oscuro' : 'claro');
+  });
+
+  /* =========================================================
+     EXPORTAR / IMPORTAR CONFIGURACIÓN
+     ========================================================= */
+  document.getElementById('exportarBtn').addEventListener('click', ()=>{
+    const raw = localStorage.getItem('miu_estado') || '{}';
+    const blob = new Blob([raw], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'miu_configuracion.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 4000);
+    mostrarToast('Configuración exportada.');
+  });
+
+  const importarInput = document.getElementById('importarInput');
+  document.getElementById('importarBtn').addEventListener('click', ()=> importarInput.click());
+  importarInput.addEventListener('change', (e)=>{
+    const archivo = e.target.files[0];
+    if(!archivo) return;
+    const lector = new FileReader();
+    lector.onload = () => {
+      try{
+        const data = JSON.parse(lector.result);
+        // Validación mínima: rechazar cualquier cosa que no tenga la forma esperada,
+        // en vez de asumir que un archivo externo es confiable.
+        if(typeof data !== 'object' || data===null){ throw new Error('formato inválido'); }
+        localStorage.setItem('miu_estado', JSON.stringify(data));
+        cargarEstado();
+        mostrarToast('Configuración importada.');
+      }catch(err){
+        mostrarToast('El archivo no tiene un formato de configuración válido.');
+      }
+    };
+    lector.readAsText(archivo);
+    importarInput.value = '';
+  });
+
+  cargarEstado();
+
+  // Nota de diseño: por política del navegador, el AudioContext no puede
+  // iniciarse solo ni auto-reanudar sonido activo entre recargas; el usuario
+  // debe pulsar "Reproducir" de nuevo tras recargar la página. Se restauran
+  // volumen, tema, y selección de temporizador, no el estado de reproducción en vivo.
+
+  /* =========================================================
+     SERVICE WORKER + INSTALACIÓN PWA
+     ========================================================= */
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('./sw.js').catch(()=>{
+        // Fallo silencioso: la app sigue funcionando online sin capacidad offline.
+        // No es un error que deba interrumpir al usuario.
+      });
+    });
+  }
+
+  let promptDiferido = null;
+  const instalarBanner = document.getElementById('instalarBanner');
+
+  window.addEventListener('beforeinstallprompt', (e)=>{
+    e.preventDefault();
+    promptDiferido = e;
+    if(!localStorage.getItem('miu_banner_cerrado')){
+      instalarBanner.classList.add('visible');
+    }
+  });
+
+  document.getElementById('instalarBtn').addEventListener('click', async ()=>{
+    if(!promptDiferido) return;
+    promptDiferido.prompt();
+    await promptDiferido.userChoice;
+    promptDiferido = null;
+    instalarBanner.classList.remove('visible');
+  });
+
+  document.getElementById('instalarCerrar').addEventListener('click', ()=>{
+    instalarBanner.classList.remove('visible');
+    localStorage.setItem('miu_banner_cerrado', '1');
+  });
+
+  window.addEventListener('appinstalled', ()=>{
+    instalarBanner.classList.remove('visible');
+    mostrarToast('Campo MIU instalado correctamente.');
+  });
+
+})();
+</script>
+</body>
+</html>
